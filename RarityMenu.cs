@@ -2,6 +2,7 @@
 using BepInEx.Configuration;
 using HarmonyLib;
 using Photon.Pun;
+using Photon.Realtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ using UnboundLib.Utils.UI;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using static PlayerInRangeTrigger;
 
 namespace RarntyMenu
 {
@@ -26,7 +28,7 @@ namespace RarntyMenu
     {
         private const string ModId = "Rarity.Toggle";
         private const string ModName = "Rarity Toggle";
-        public const string Version = "0.1.1";
+        public const string Version = "0.1.2";
         bool ready = false;
         int maxRarity = 2;
 
@@ -101,7 +103,8 @@ namespace RarntyMenu
                 ready = true;
             });
             Unbound.RegisterMenu(ModName, delegate () { }, menu => Unbound.Instance.StartCoroutine(SetupGUI(menu)), null, false);
-            Unbound.RegisterHandshake(ModId, this.OnHandShakeCompleted);
+            gameObject.AddComponent<Sync>();
+            //Unbound.RegisterHandshake(ModId, this.OnHandShakeCompleted);
         }
 
 
@@ -113,7 +116,7 @@ namespace RarntyMenu
             }
         }
         [UnboundRPC]
-        private static void SyncSettings(string[] cards, int[] rarities)
+        internal static void SyncSettings(string[] cards, int[] rarities)
         {
             for (int i = 0; i < cards.Length; i++)
             {
@@ -188,6 +191,33 @@ namespace RarntyMenu
                     cardObject.GetComponentInChildren<CardInfo>().rarity = (CardInfo.Rarity)(RarityMenu.CardRaritys[name].Value >= 0 ? RarityMenu.CardRaritys[name].Value : RarityMenu.CardDefaultRaritys[name]);
                     cardObject.GetComponentsInChildren<CardRarityColor>().ToList().ForEach(r => r.Toggle(true)); 
                 } });
+        }
+    }
+
+    [DisallowMultipleComponent]
+    public class Sync : MonoBehaviourPunCallbacks
+    {
+        public static Sync instance;
+
+        private void Awake()
+        {
+            if (instance == null)
+            {
+                instance = this;
+            }
+            else if (instance != this)
+            {
+                DestroyImmediate(this);
+            }
+        }
+        public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                RaiseEventOptions options = new RaiseEventOptions();
+                options.TargetActors = new int[] { newPlayer.ActorNumber };
+                NetworkingManager.RPC(typeof(RarityMenu), nameof(RarityMenu.SyncSettings), options, new object[] { RarityMenu.CardRaritys.Keys.ToArray(), RarityMenu.CardRaritys.Values.Select(c => c.Value).ToArray() });
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ namespace RarntyMenu
     {
         private const string ModId = "Rarity.Toggle";
         private const string ModName = "Rarity Toggle";
-        public const string Version = "0.1.0";
+        public const string Version = "0.1.1";
         bool ready = false;
         int maxRarity = 2;
 
@@ -146,16 +146,16 @@ namespace RarntyMenu
             {
                 MenuHandler.CreateText(card.cardName, menu, out _, 30, color: CardChoice.instance.GetCardColor(card.colorTheme));
                 Color common = new Color(0.0978f, 0.1088f, 0.1321f);
-                Color c = RarityLib.Utils.RarityUtils.GetRarityData(CardRaritys[card.name].Value > 0 ? ((CardInfo.Rarity)CardRaritys[card.name].Value) : card.rarity).colorOff;
-                CardRaritysTexts[card.name] = CreateSliderWithoutInput(CardRaritys[card.name].Value > 0?((CardInfo.Rarity)CardRaritys[card.name].Value).ToString():card.rarity.ToString(), menu, 30, 0, maxRarity, CardRaritys[card.name].Value, (value) =>
+                Color c = RarityLib.Utils.RarityUtils.GetRarityData(CardRaritys[card.name].Value >= 0 ? ((CardInfo.Rarity)CardRaritys[card.name].Value) : card.rarity).colorOff;
+                CardRaritysTexts[card.name] = CreateSliderWithoutInput(CardRaritys[card.name].Value >= 0?((CardInfo.Rarity)CardRaritys[card.name].Value).ToString(): "DEFAULT", menu, 30, -1, maxRarity, CardRaritys[card.name].Value, (value) =>
                 {
                     CardRaritys[card.name].Value = (int)value;
-                    card.rarity = (CardInfo.Rarity)(int)value;
+                    card.rarity = (CardInfo.Rarity)(CardRaritys[card.name].Value >= 0 ? CardRaritys[card.name].Value : CardDefaultRaritys[card.name]);
                     try
                     {
                         Color common = new Color(0.0978f, 0.1088f, 0.1321f);
-                        Color c = RarityLib.Utils.RarityUtils.GetRarityData(CardRaritys[card.name].Value > 0 ? ((CardInfo.Rarity)CardRaritys[card.name].Value) : card.rarity).colorOff;
-                        CardRaritysTexts[card.name].text = card.rarity.ToString().ToUpper();
+                        Color c = RarityLib.Utils.RarityUtils.GetRarityData(CardRaritys[card.name].Value >= 0 ? ((CardInfo.Rarity)CardRaritys[card.name].Value) : card.rarity).colorOff;
+                        CardRaritysTexts[card.name].text = value>=0?card.rarity.ToString().ToUpper() : "DEFAULT";
                         CardRaritysTexts[card.name].color = c.Equals(common) ? Color.white : c;
                     }
                     catch { }

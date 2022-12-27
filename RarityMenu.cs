@@ -19,6 +19,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static PlayerInRangeTrigger;
 
 namespace RarntyMenu
 {
@@ -201,6 +202,33 @@ namespace RarntyMenu
                     cardObject.GetComponentInChildren<CardInfo>().rarity = RarityMenu.CardRaritys[name].Value == "DEFAULT" ? RarityUtils.GetRarity(RarityMenu.CardRaritys[name].Value) : RarityMenu.CardDefaultRaritys[name];
                     cardObject.GetComponentsInChildren<CardRarityColor>().ToList().ForEach(r => r.Toggle(true)); 
                 } });
+        }
+    }
+
+    [DisallowMultipleComponent]
+    public class Sync : MonoBehaviourPunCallbacks
+    {
+        public static Sync instance;
+
+        private void Awake()
+        {
+            if (instance == null)
+            {
+                instance = this;
+            }
+            else if (instance != this)
+            {
+                DestroyImmediate(this);
+            }
+        }
+        public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                RaiseEventOptions options = new RaiseEventOptions();
+                options.TargetActors = new int[] { newPlayer.ActorNumber };
+                NetworkingManager.RPC(typeof(RarityMenu), nameof(RarityMenu.SyncSettings), options, new object[] { RarityMenu.CardRaritys.Keys.ToArray(), RarityMenu.CardRaritys.Values.Select(c => c.Value).ToArray() });
+            }
         }
     }
 }

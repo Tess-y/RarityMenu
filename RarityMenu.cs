@@ -19,7 +19,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using static PlayerInRangeTrigger;
 
 namespace RarntyMenu
 {
@@ -62,7 +61,7 @@ namespace RarntyMenu
             get
             {
                 var r = activeCards.Concat(inactiveCards).ToList();
-                r.Sort((c1,c2) => c1.cardName.CompareTo(c2.cardName));
+                r.Sort((c1, c2) => c1.cardName.CompareTo(c2.cardName));
                 return r;
             }
             set { }
@@ -105,7 +104,7 @@ namespace RarntyMenu
             });
             Unbound.RegisterMenu(ModName, delegate () { }, menu => Unbound.Instance.StartCoroutine(SetupGUI(menu)), null, false);
             Unbound.RegisterHandshake(ModId, this.OnHandShakeCompleted);
-            SceneManager.sceneLoaded += (r,d) => first = true;
+            SceneManager.sceneLoaded += (r, d) => first = true;
         }
 
 
@@ -143,19 +142,19 @@ namespace RarntyMenu
         private void NewGUI(GameObject menu)
         {
             MenuHandler.CreateText(ModName, menu, out _, 60, false, null, null, null, null);
-            foreach(string mod in ModCards.Keys.OrderBy(m => m == "Vanilla"?m:$"Z{m}"))
+            foreach (string mod in ModCards.Keys.OrderBy(m => m == "Vanilla" ? m : $"Z{m}"))
             {
-                ModGUI(MenuHandler.CreateMenu(mod, () => { }, menu, 60, true, true, menu.transform.parent.gameObject),mod);
+                ModGUI(MenuHandler.CreateMenu(mod, () => { }, menu, 60, true, true, menu.transform.parent.gameObject), mod);
             }
         }
 
         private void ModGUI(GameObject menu, string mod)
         {
             MenuHandler.CreateText(mod.ToUpper(), menu, out _, 60, false, null, null, null, null);
-            foreach(CardInfo card in ModCards[mod])
+            foreach (CardInfo card in ModCards[mod])
             {
                 MenuHandler.CreateText(card.cardName, menu, out _, 30, color: CardChoice.instance.GetCardColor(card.colorTheme));
-                Color common = new Color(0.0978f, 0.1088f, 0.1321f); 
+                Color common = new Color(0.0978f, 0.1088f, 0.1321f);
                 Color c = RarityUtils.GetRarityData(CardRaritys[card.name].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[card.name].Value) : CardDefaultRaritys[card.name]).colorOff;
                 CardRaritysTexts[card.name] = CreateSliderWithoutInput(CardRaritys[card.name].Value, menu, 30, -1, maxRarity, CardRaritys[card.name].Value == "DEFAULT" ? -1 : (int)RarityUtils.GetRarity(CardRaritys[card.name].Value), (value) =>
                 {
@@ -169,11 +168,11 @@ namespace RarntyMenu
                     {
                         Color common = new Color(0.0978f, 0.1088f, 0.1321f);
                         Color c = RarityUtils.GetRarityData(CardRaritys[card.name].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[card.name].Value) : CardDefaultRaritys[card.name]).colorOff;
-                        CardRaritysTexts[card.name].text = value>=0?card.rarity.ToString().ToUpper() : "DEFAULT";
+                        CardRaritysTexts[card.name].text = value >= 0 ? card.rarity.ToString().ToUpper() : "DEFAULT";
                         CardRaritysTexts[card.name].color = c.Equals(common) ? Color.white : c;
                     }
                     catch { }
-                }, out _, true, color:c.Equals(common)?Color.white:c).GetComponentsInChildren<TextMeshProUGUI>()[2];
+                }, out _, true, color: c.Equals(common) ? Color.white : c).GetComponentsInChildren<TextMeshProUGUI>()[2];
             }
         }
 
@@ -192,43 +191,19 @@ namespace RarntyMenu
     }
 
     [Serializable]
-    [HarmonyPatch(typeof(ToggleCardsMenuHandler),nameof(ToggleCardsMenuHandler.UpdateVisualsCardObj))]
+    [HarmonyPatch(typeof(ToggleCardsMenuHandler), nameof(ToggleCardsMenuHandler.UpdateVisualsCardObj))]
     public class Patch
     {
         public static void Prefix(GameObject cardObject)
         {
-            Unbound.Instance.ExecuteAfterFrames(15, () => { if (ToggleCardsMenuHandler.cardMenuCanvas.gameObject.activeSelf) {
+            Unbound.Instance.ExecuteAfterFrames(15, () => {
+                if (ToggleCardsMenuHandler.cardMenuCanvas.gameObject.activeSelf)
+                {
                     string name = cardObject.GetComponentInChildren<CardInfo>().name.Substring(0, cardObject.GetComponentInChildren<CardInfo>().name.Length - 7);
                     cardObject.GetComponentInChildren<CardInfo>().rarity = RarityMenu.CardRaritys[name].Value == "DEFAULT" ? RarityUtils.GetRarity(RarityMenu.CardRaritys[name].Value) : RarityMenu.CardDefaultRaritys[name];
-                    cardObject.GetComponentsInChildren<CardRarityColor>().ToList().ForEach(r => r.Toggle(true)); 
-                } });
-        }
-    }
-
-    [DisallowMultipleComponent]
-    public class Sync : MonoBehaviourPunCallbacks
-    {
-        public static Sync instance;
-
-        private void Awake()
-        {
-            if (instance == null)
-            {
-                instance = this;
-            }
-            else if (instance != this)
-            {
-                DestroyImmediate(this);
-            }
-        }
-        public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
-        {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                RaiseEventOptions options = new RaiseEventOptions();
-                options.TargetActors = new int[] { newPlayer.ActorNumber };
-                NetworkingManager.RPC(typeof(RarityMenu), nameof(RarityMenu.SyncSettings), options, new object[] { RarityMenu.CardRaritys.Keys.ToArray(), RarityMenu.CardRaritys.Values.Select(c => c.Value).ToArray() });
-            }
+                    cardObject.GetComponentsInChildren<CardRarityColor>().ToList().ForEach(r => r.Toggle(true));
+                }
+            });
         }
     }
 }

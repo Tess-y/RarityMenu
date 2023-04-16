@@ -144,7 +144,8 @@ namespace RarntyMenu
             MenuHandler.CreateText(ModName, menu, out _, 60, false, null, null, null, null);
             foreach (string mod in ModCards.Keys.OrderBy(m => m == "Vanilla" ? m : $"Z{m}"))
             {
-                ModGUI(MenuHandler.CreateMenu(mod, () => { }, menu, 60, true, true, menu.transform.parent.gameObject), mod);
+                var modNameSafe = System.Text.RegularExpressions.Regex.Replace(mod, @"[^0-9a-zA-Z]+", "");
+                ModGUI(MenuHandler.CreateMenu(modNameSafe, () => { }, menu, 60, true, true, menu.transform.parent.gameObject), mod);
             }
         }
 
@@ -153,7 +154,8 @@ namespace RarntyMenu
             MenuHandler.CreateText(mod.ToUpper(), menu, out _, 60, false, null, null, null, null);
             foreach (CardInfo card in ModCards[mod])
             {
-                MenuHandler.CreateText(card.cardName, menu, out _, 30, color: CardChoice.instance.GetCardColor(card.colorTheme));
+                var cardNameSafe = System.Text.RegularExpressions.Regex.Replace(card.cardName, @"[^0-9a-zA-Z]+", "");
+                MenuHandler.CreateText(cardNameSafe, menu, out _, 30, color: CardChoice.instance.GetCardColor(card.colorTheme));
                 Color common = new Color(0.0978f, 0.1088f, 0.1321f);
                 Color c = RarityUtils.GetRarityData(CardRaritys[card.name].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[card.name].Value) : CardDefaultRaritys[card.name]).colorOff;
                 CardRaritysTexts[card.name] = CreateSliderWithoutInput(CardRaritys[card.name].Value, menu, 30, -1, maxRarity, CardRaritys[card.name].Value == "DEFAULT" ? -1 : (int)RarityUtils.GetRarity(CardRaritys[card.name].Value), (value) =>

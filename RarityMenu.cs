@@ -84,18 +84,20 @@ namespace RarntyMenu
                 foreach (CardInfo card in allCards)
                 {
                     mod = CardManager.cards.Values.First(c => c.cardInfo == card).category;
-                    CardRaritys[card.name] = Config.Bind(ModId, card.name, "DEFAULT", $"Rarity value of card {card.cardName} from {mod}");
-                    CardDefaultRaritys[card.name] = card.rarity;
-                    CardInfo.Rarity cardRarity = RarityUtils.GetRarity(CardRaritys[card.name].Value);
-                    if (cardRarity == CardInfo.Rarity.Common && CardRaritys[card.name].Value != "Common")
+                    var modNameSafe = System.Text.RegularExpressions.Regex.Replace(mod, @"[^0-9a-zA-Z]+", "");
+                    var rawCardNameSafe = System.Text.RegularExpressions.Regex.Replace(card.name, @"[^0-9a-zA-Z_]+", "");
+                    CardRaritys[] = Config.Bind(ModId, rawCardNameSafe, "DEFAULT", $"Rarity value of card {card.cardName} from {mod}");
+                    CardDefaultRaritys[rawCardNameSafe] = card.rarity;
+                    CardInfo.Rarity cardRarity = RarityUtils.GetRarity(CardRaritys[rawCardNameSafe].Value);
+                    if (cardRarity == CardInfo.Rarity.Common && CardRaritys[rawCardNameSafe].Value != "Common")
                     {
-                        cardRarity = CardDefaultRaritys[card.name];
+                        cardRarity = CardDefaultRaritys[rawCardNameSafe];
                         CardRaritys[card.name].Value = "DEFAULT";
                     }
                     card.rarity = cardRarity;
                     // mod
-                    if (!ModCards.ContainsKey(mod)) ModCards.Add(mod, new List<CardInfo>());
-                    ModCards[mod].Add(card);
+                    if (!ModCards.ContainsKey(modNameSafe)) ModCards.Add(modNameSafe, new List<CardInfo>());
+                    ModCards[modNameSafe].Add(card);
                 }
                 maxRarity = Enum.GetValues(typeof(CardInfo.Rarity)).Length - 1;
 
@@ -126,7 +128,10 @@ namespace RarntyMenu
                 {
                     cardRarities[cards[i]] = rarities[i];
                 }
-                allCards.ForEach(c => c.rarity = cardRarities[c.name] != "DEFAULT" ? RarityUtils.GetRarity(cardRarities[c.name]) : CardDefaultRaritys[c.name]);
+                allCards.ForEach(card => {
+                    var rawCardNameSafe = System.Text.RegularExpressions.Regex.Replace(card.name, @"[^0-9a-zA-Z_]+", "");
+                    card.rarity = cardRarities[rawCardNameSafe] != "DEFAULT" ? RarityUtils.GetRarity(cardRarities[rawCardNameSafe]) : CardDefaultRaritys[rawCardNameSafe];
+                });
             }
         }
 
@@ -144,7 +149,8 @@ namespace RarntyMenu
             MenuHandler.CreateText(ModName, menu, out _, 60, false, null, null, null, null);
             foreach (string mod in ModCards.Keys.OrderBy(m => m == "Vanilla" ? m : $"Z{m}"))
             {
-                ModGUI(MenuHandler.CreateMenu(mod, () => { }, menu, 60, true, true, menu.transform.parent.gameObject), mod);
+                var modNameSafe = System.Text.RegularExpressions.Regex.Replace(mod, @"[^0-9a-zA-Z]+", "");
+                ModGUI(MenuHandler.CreateMenu(modNameSafe, () => { }, menu, 60, true, true, menu.transform.parent.gameObject), modNameSafe);
             }
         }
 
@@ -153,23 +159,25 @@ namespace RarntyMenu
             MenuHandler.CreateText(mod.ToUpper(), menu, out _, 60, false, null, null, null, null);
             foreach (CardInfo card in ModCards[mod])
             {
-                MenuHandler.CreateText(card.cardName, menu, out _, 30, color: CardChoice.instance.GetCardColor(card.colorTheme));
+                var rawCardNameSafe = System.Text.RegularExpressions.Regex.Replace(card.name, @"[^0-9a-zA-Z_]+", "");
+                var cardNameSafe = System.Text.RegularExpressions.Regex.Replace(card.cardName, @"[^0-9a-zA-Z_]+", "");
+                MenuHandler.CreateText(cardNameSafe, menu, out _, 30, color: CardChoice.instance.GetCardColor(card.colorTheme));
                 Color common = new Color(0.0978f, 0.1088f, 0.1321f);
-                Color c = RarityUtils.GetRarityData(CardRaritys[card.name].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[card.name].Value) : CardDefaultRaritys[card.name]).colorOff;
-                CardRaritysTexts[card.name] = CreateSliderWithoutInput(CardRaritys[card.name].Value, menu, 30, -1, maxRarity, CardRaritys[card.name].Value == "DEFAULT" ? -1 : (int)RarityUtils.GetRarity(CardRaritys[card.name].Value), (value) =>
+                Color c = RarityUtils.GetRarityData(CardRaritys[rawCardNameSafe].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[rawCardNameSafe].Value) : CardDefaultRaritys[rawCardNameSafe]).colorOff;
+                CardRaritysTexts[rawCardNameSafe] = CreateSliderWithoutInput(CardRaritys[rawCardNameSafe].Value, menu, 30, -1, maxRarity, CardRaritys[rawCardNameSafe].Value == "DEFAULT" ? -1 : (int)RarityUtils.GetRarity(CardRaritys[rawCardNameSafe].Value), (value) =>
                 {
 
                     if (value >= 0)
-                        CardRaritys[card.name].Value = RarityUtils.GetRarityData((CardInfo.Rarity)(int)value).name;
+                        CardRaritys[rawCardNameSafe].Value = RarityUtils.GetRarityData((CardInfo.Rarity)(int)value).name;
                     else
-                        CardRaritys[card.name].Value = "DEFAULT";
-                    card.rarity = CardRaritys[card.name].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[card.name].Value) : CardDefaultRaritys[card.name];
+                        CardRaritys[rawCardNameSafe].Value = "DEFAULT";
+                    card.rarity = CardRaritys[rawCardNameSafe].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[rawCardNameSafe].Value) : CardDefaultRaritys[rawCardNameSafe];
                     try
                     {
                         Color common = new Color(0.0978f, 0.1088f, 0.1321f);
-                        Color c = RarityUtils.GetRarityData(CardRaritys[card.name].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[card.name].Value) : CardDefaultRaritys[card.name]).colorOff;
-                        CardRaritysTexts[card.name].text = value >= 0 ? card.rarity.ToString().ToUpper() : "DEFAULT";
-                        CardRaritysTexts[card.name].color = c.Equals(common) ? Color.white : c;
+                        Color c = RarityUtils.GetRarityData(CardRaritys[rawCardNameSafe].Value != "DEFAULT" ? RarityUtils.GetRarity(CardRaritys[rawCardNameSafe].Value) : CardDefaultRaritys[rawCardNameSafe]).colorOff;
+                        CardRaritysTexts[rawCardNameSafe].text = value >= 0 ? card.rarity.ToString().ToUpper() : "DEFAULT";
+                        CardRaritysTexts[rawCardNameSafe].color = c.Equals(common) ? Color.white : c;
                     }
                     catch { }
                 }, out _, true, color: c.Equals(common) ? Color.white : c).GetComponentsInChildren<TextMeshProUGUI>()[2];
@@ -200,7 +208,8 @@ namespace RarntyMenu
                 if (ToggleCardsMenuHandler.cardMenuCanvas.gameObject.activeSelf)
                 {
                     string name = cardObject.GetComponentInChildren<CardInfo>().name.Substring(0, cardObject.GetComponentInChildren<CardInfo>().name.Length - 7);
-                    cardObject.GetComponentInChildren<CardInfo>().rarity = RarityMenu.CardRaritys[name].Value != "DEFAULT" ? RarityUtils.GetRarity(RarityMenu.CardRaritys[name].Value) : RarityMenu.CardDefaultRaritys[name];
+                    var rawCardNameSafe = System.Text.RegularExpressions.Regex.Replace(name, @"[^0-9a-zA-Z_]+", "");
+                    cardObject.GetComponentInChildren<CardInfo>().rarity = RarityMenu.CardRaritys[rawCardNameSafe].Value != "DEFAULT" ? RarityUtils.GetRarity(RarityMenu.CardRaritys[rawCardNameSafe].Value) : RarityMenu.CardDefaultRaritys[rawCardNameSafe];
                     cardObject.GetComponentsInChildren<CardRarityColor>().ToList().ForEach(r => r.Toggle(true));
                 }
             });

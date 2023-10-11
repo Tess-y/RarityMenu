@@ -28,7 +28,7 @@ namespace RarntyMenu
     {
         private const string ModId = "Rarity.Toggle";
         private const string ModName = "Rarity Toggle";
-        public const string Version = "0.2.1";
+        public const string Version = "999.0.0";
         bool ready = false;
         int maxRarity = 2;
         static bool first = true;
@@ -60,7 +60,7 @@ namespace RarntyMenu
         {
             get
             {
-                var r = activeCards.Concat(inactiveCards).ToList();
+                var r = CardManager.cards.Values.Select(v=>v.cardInfo).ToList();
                 r.Sort((c1, c2) => c1.cardName.CompareTo(c2.cardName));
                 return r;
             }
@@ -81,21 +81,19 @@ namespace RarntyMenu
             Unbound.Instance.ExecuteAfterFrames(60, () =>
             {
                 string mod = "Vanilla";
-                foreach (CardInfo card in allCards)
-                {
-                    mod = CardManager.cards.Values.First(c => c.cardInfo == card).category;
-                    CardRaritys[card.name] = Config.Bind(ModId, card.name, "DEFAULT", $"Rarity value of card {card.cardName} from {mod}");
-                    CardDefaultRaritys[card.name] = card.rarity;
-                    CardInfo.Rarity cardRarity = RarityUtils.GetRarity(CardRaritys[card.name].Value);
-                    if (cardRarity == CardInfo.Rarity.Common && CardRaritys[card.name].Value != "Common")
-                    {
-                        cardRarity = CardDefaultRaritys[card.name];
-                        CardRaritys[card.name].Value = "DEFAULT";
-                    }
-                    card.rarity = cardRarity;
-                    // mod
-                    if (!ModCards.ContainsKey(mod)) ModCards.Add(mod, new List<CardInfo>());
-                    ModCards[mod].Add(card);
+                foreach(CardInfo card in allCards) {
+                        mod = CardManager.cards.Values.First(c => c.cardInfo == card).category;
+                        CardRaritys[card.name] = Config.Bind(ModId, card.name, "DEFAULT", $"Rarity value of card {card.cardName} from {mod}");
+                        CardDefaultRaritys[card.name] = card.rarity;
+                        CardInfo.Rarity cardRarity = RarityUtils.GetRarity(CardRaritys[card.name].Value);
+                        if(cardRarity == CardInfo.Rarity.Common && CardRaritys[card.name].Value != "Common") {
+                            cardRarity = CardDefaultRaritys[card.name];
+                            CardRaritys[card.name].Value = "DEFAULT";
+                        }
+                        card.rarity = cardRarity;
+                        // mod
+                        if(!ModCards.ContainsKey(mod)) ModCards.Add(mod, new List<CardInfo>());
+                        ModCards[mod].Add(card);
                 }
                 maxRarity = Enum.GetValues(typeof(CardInfo.Rarity)).Length - 1;
 
